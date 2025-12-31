@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>B2 词汇冲刺 - 移动版</title>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f8f9fa; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 15px; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 15px; color: #666; }
+        #card { background: white; width: 100%; max-width: 400px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; box-sizing: border-box; text-align: center; }
+        .word-type { background: #eee; display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; color: #555; }
+        .chinese { font-size: 26px; font-weight: bold; margin-bottom: 20px; color: #222; min-height: 40px; }
+        input { width: 100%; padding: 15px; font-size: 18px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; transition: 0.2s; -webkit-appearance: none; }
+        input:focus { border-color: var(--primary); outline: none; }
+        .correct { border-color: var(--success) !important; background: #eaffed; }
+        .wrong { border-color: var(--danger) !important; background: #fff0f0; }
+        #feedback { margin-top: 15px; height: 24px; font-weight: bold; font-size: 16px; }
+        .controls { margin-top: 20px; width: 100%; display: flex; gap: 10px; }
+        button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-skip { background: #e9ecef; color: #495057; }
+        #summary { display: none; width: 100%; max-width: 400px; background: white; padding: 20px; border-radius: 16px; margin-top: 10px; box-sizing: border-box; }
+        .error-item { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="stats">
+        <span>进度: <b id="currentIdx">0</b>/<span id="totalIdx">0</span></span>
+        <span>正确: <b id="correctCount" style="color:var(--success)">0</b></span>
+        <span>错误: <b id="wrongCount" style="color:var(--danger)">0</b></span>
+    </div>
+
+    <div id="card">
+        <div id="wordType" class="word-type">名词</div>
+        <div id="chinesePrompt" class="chinese">准备好了吗？</div>
+        <input type="text" id="userInput" placeholder="输入德语词..." autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div id="feedback"></div>
+        <div class="controls">
+            <button class="btn-skip" onclick="handleSkip()">跳过</button>
+        </div>
+    </div>
+
+    <div id="summary">
+        <h2>测试完成！</h2>
+        <div id="finalScore" style="font-size: 20px; color: var(--primary); margin-bottom: 15px;"></div>
+        <div style="font-weight: bold; margin-bottom: 10px;">待复习清单：</div>
+        <div id="errorDisplay"></div>
+        <button onclick="location.reload()" style="width:100%; margin-top:20px; background:var(--success); color:white;">重新开始</button>
+    </div>
+
+    <script>
+        // 在此处填入你的词汇数据
+        const vocabulary = [
+            { de: "der Erfolg", cn: "成功", type: "名词" },
+            { de: "beantragen", cn: "申请", type: "动词" },
+            { de: "nachhaltig", cn: "可持续的", type: "形容词" }
+        ];
+
+        let pool = [...vocabulary].sort(() => Math.random() - 0.5);
+        let currentPos = 0, corrects = 0, wrongs = 0, errorCollection = [];
+        const inputEl = document.getElementById('userInput');
+
+        function init() {
+            document.getElementById('totalIdx').innerText = pool.length;
+            showWord();
+        }
+
+        function showWord() {
+            if (currentPos >= pool.length) { showFinalSummary(); return; }
+            const word = pool[currentPos];
+            document.getElementById('chinesePrompt').innerText = word.cn;
+            document.getElementById('wordType').innerText = word.type;
+            document.getElementById('currentIdx').innerText = currentPos + 1;
+            inputEl.value = ""; inputEl.className = "";
+            document.getElementById('feedback').innerText = "";
+        }
+
+        inputEl.addEventListener('input', function() {
+            const target = pool[currentPos];
+            if (this.value.trim() === target.de) {
+                this.className = "correct";
+                document.getElementById('feedback').style.color = "var(--success)";
+                document.getElementById('feedback').innerText = "Richtig!";
+                corrects++;
+                document.getElementById('correctCount').innerText = corrects;
+                setTimeout(next, 500);
+            }
+        });
+
+        function handleSkip() {
+            const target = pool[currentPos];
+            if(!errorCollection.some(e => e.de === target.de)) {
+                errorCollection.push(target);
+                wrongs++;
+                document.getElementById('wrongCount').innerText = wrongs;
+            }
+            document.getElementById('feedback').style.color = "var(--danger)";
+            document.getElementById('feedback').innerText = "Lösung: " + target.de;
+            setTimeout(next, 1500); 
+        }
+
+        function next() { currentPos++; showWord(); }
+
+        function showFinalSummary() {
+            document.getElementById('card').style.display = 'none';
+            document.getElementById('summary').style.display = 'block';
+            document.getElementById('finalScore').innerText = `正确率: ${Math.round(corrects/pool.length*100)}%`;
+            document.getElementById('errorDisplay').innerHTML = errorCollection.map(w => `<div class="error-item"><b>${w.de}</b>: ${w.cn}</div>`).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
